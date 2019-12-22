@@ -288,12 +288,12 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-	unsigned takeExp = (0xff << 23)
+	unsigned takeExp = (0xff << 23);
 	unsigned Exp = takeExp & uf;
-	unsigned takeSign = (1 << 31)
+	unsigned takeSign = (1 << 31);
 	unsigned Sign = takeSign & uf;
 	unsigned takeF = ~(takeExp | takeSign);	
-	unsigned F = takeF & uf
+	unsigned F = takeF & uf;
 	unsigned result;
 	if(!(Exp ^ takeExp) && F)   //NaN
 		return uf;
@@ -319,7 +319,6 @@ unsigned floatScale2(unsigned uf) {
 			return result;
 		}
 	}
-	return ;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -334,7 +333,41 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+	unsigned takeExp = (0xff << 23)
+	unsigned Exp = takeExp & uf;
+	unsigned takeSign = (1 << 31)
+	unsigned Sign = takeSign & uf;
+	unsigned takeF = ~(takeExp | takeSign);	
+	unsigned F = takeF & uf;
+	unsigned result;
+	unsigned NaN = 1 << 31;
+	int E;
+	if(!(Exp ^ takeExp) && F)   //NaN
+		return NaN;
+	else if(!(Exp ^ takeExp))       //Inf
+		return NaN;
+	else if(!(Exp ^ 0))           //Denormalized
+	{
+		
+		result = 0;
+		return result; 
+	}
+	else                           //Normalized
+	{
+		
+		E = (Exp >> 23) + 127;
+		if( !((E & takeSign) >> 31) )
+		{
+			result = (F << E) >> 23;
+			result = result + Sign;
+		}
+		else
+		{
+			result = 0;
+		}
+		return result;
+	}
+
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -350,5 +383,26 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+	int min = 1 << 31;
+	int i;
+	int Exp, F, bias, E;
+	int result;
+
+	bias = 127;
+	if(x >= 128)                   //Inf
+		return 0x7f000000;
+	else if(x >= -127)             //Norm
+	{
+		Exp = x + bias;         //Only Exp works
+		result = Exp << 23; 
+		return result;
+	}
+	else if(x >= -150)             //Denorm
+	{
+		result = 1 << (x + 150);  //Only F works
+		return result;
+	}
+	else
+		return 0;
+	return 2;
 }
