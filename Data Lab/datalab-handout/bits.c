@@ -286,39 +286,42 @@ int howManyBits(int x) {
  *   Max ops: 30
  *   Rating: 4
  */
+
 unsigned floatScale2(unsigned uf) {
 	unsigned takeExp = (0xff << 23);
-	unsigned Exp = takeExp & uf;
+	unsigned Exp;
 	unsigned takeSign = (1 << 31);
-	unsigned Sign = takeSign & uf;
-	unsigned takeF = ~(takeExp | takeSign);	
-	unsigned F = takeF & uf;
+	unsigned Sign;
+	unsigned takeF;	
+	unsigned F;
 	unsigned result;
-	if(!(Exp ^ takeExp) && F)   //NaN
-		return uf;
-	else if(!(Exp ^ takeExp))       //Inf
+	Exp = takeExp & uf;
+	Sign = takeSign & uf;
+	takeF = ~(takeExp | takeSign);
+	F = takeF & uf;
+	if(!(Exp ^ takeExp))   //NaN or Inf
 		return uf;
 	else if(!(Exp ^ 0))           //Denormalized
 	{
-		result = F << 1;
-		result += F;
-		result += Sign;
-		return result;
+	
+		return (uf<<1) | Sign;
 	}
 	else                           //Normalized
 	{
-		if(!((0xfe << 23) ^ Exp))   //result could be Inf(Exp = fe)
+		if(!(0x7f000000 ^ Exp))   //result could be Inf(Exp = fe)
 		{
-			result = takeExp + Sign; //return Inf
+			result = takeExp | Sign; //return Inf
 			return result;
 		}
 		else
 		{
-			result = (1 << 23) + Sign | F | Exp  ;
-			return result;
+			
+			Exp = Exp + (1<<23);
+			return (uf&0x807fffff)|Exp;
 		}
 	}
 }
+
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
  *   for floating point argument f.
@@ -332,41 +335,28 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-	unsigned takeExp = (0xff << 23);
-	unsigned Exp = takeExp & uf;
-	unsigned takeSign = (1 << 31);
-	unsigned Sign = takeSign & uf;
-	unsigned takeF = ~(takeExp | takeSign);	
-	unsigned F = takeF & uf;
-	unsigned result;
-	unsigned NaN = 1 << 31;
-	unsigned E;
-	if(!(Exp ^ takeExp) && F)   //NaN
-		return NaN;
-	else if(!(Exp ^ takeExp))       //Inf
-		return NaN;
-	else if(!(Exp ^ 0))           //Denormalized
-	{
-		
-		result = 0;
-		return result; 
-	}
-	else                           //Normalized
-	{
-		
-		E = (Exp >> 23) + 127;
-		if( !((E & takeSign) >> 31) )
-		{
-			result = (F << E) >> 23;
-			result = result + Sign;
-		}
-		else
-		{
-			result = 0;
-		}
-		return result;
-	}
+	int takeExp = (0xff << 23);
+	int Exp = takeExp & uf ;
+	int Sign = uf >> 31;
+	int takeF = ~(takeExp | (1 << 31));	
+	int F = takeF & uf;
+	int NaN = 1 << 31;
+	int E;
+	
+	E = (Exp >> 23) - 127;
+	if(E >= 32)             //NaN&INf
+		return 0x80000000;
+	if(E < 0)                //smaller than 1
+		return 0;
+	F = F + (1 << 23);
+	if(E > 23) F <<= (E-23);    //switch
+  	else F >>= (23 - E);
 
+  	if(!((F >> 31) ^ Sign)) return F;   //sign isn't influenced
+  	else if(F >> 31) return 0x80000000; //influenced by 1 
+  	else return ~F + 1;                 //influenced by 0, turn to negative
+
+	
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -389,7 +379,7 @@ unsigned floatPower2(int x) {
 
 	bias = 127;
 	if(x >= 128)                   //Inf
-		return 0x7f000000;
+		return 0x7f800000;
 	else if(x >= -127)             //Norm
 	{
 		Exp = x + bias;         //Only Exp works
