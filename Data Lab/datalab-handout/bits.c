@@ -144,7 +144,7 @@ NOTES:
  *   Use De Morgan
  */
 int bitXor(int x, int y) {	
-  return ~( ~( a & ~b) & ~( ~a & b) );
+  return ~( ~( x & ~y) & ~( ~x & y) );
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -166,10 +166,9 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  int min = 1 << 31; //0x80
-  int max = ~(1 << 31);  //0x7f
-  
-  return (((x ^ min) >> 31) & 1) & ( !(x ^ max)); //non negative(1) & !(equal to x1111111 (0))
+	
+  return !((x ^ (~(x + 1))) + !(~x));
+ //x ^ ~(x+1) = 0: 0xffffffff and 0x7fffffff, exclude 0xffffffff
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -180,7 +179,7 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  int comp = ~(0xAA + 0xAA << 8 + 0xAA << 16 + 0xAA << 24); \
+  int comp = ~(0xAA + (0xAA << 8) + (0xAA << 16) + (0xAA << 24)); 
  //comp: all even numbers = 1, odd numbers = 0
   return !(~(x | comp)); 
 //non-negative & !(rest bits are equal (0))
@@ -221,7 +220,7 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
- 	return ((!!x << 31) >> 31) & y + ((!x << 31) >> 31) & z;
+ 	return ((( (!!x) << 31) >> 31) & y) + ((((!x) << 31) >> 31) & z);
 }
 
 /* 
@@ -232,10 +231,10 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-	int x_y = x + ~y + 1;
+	int y_x = y + ~x + 1;
 	int min = 1 << 31;
-	int sign = ~((x ^ y) >> 31)
-  	return sign & ((x_y & min) >> 31 + !(x_y ^ 0)) + ~sign & ((x ^ min) >> 31);
+	int sign = ~((x ^ y) >> 31);
+  	return (sign & (!((y_x & min) >> 31))) + (~sign & (((y ^ min) >> 31) & 1));
 //same: x - y = negative or zero
 //one neg one pos: judge the sign bit
 }
@@ -249,7 +248,7 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  	return ( (~ (x ^ (~x + 1)) >> 31) & ( (~x >> 31) ) & 1;
+  	return  (~ (x ^ (~x + 1)) >> 31) &  (~x >> 31) & 1;
 //x is equal to -x (1000 and 0000) and must be non-negative (0000), then output 1
 }
 /* howManyBits - return the minimum number of bits required to represent x in
@@ -308,14 +307,14 @@ unsigned floatScale2(unsigned uf) {
 	}
 	else                           //Normalized
 	{
-		if(!((0xfe << 23) ^ Exp))   //result could be Inf(Exp = fffe)
+		if(!((0xfe << 23) ^ Exp))   //result could be Inf(Exp = fe)
 		{
 			result = takeExp + Sign; //return Inf
 			return result;
 		}
 		else
 		{
-			result = Sign + Exp + F + (1 << 23);
+			result = (1 << 23) + Sign | F | Exp  ;
 			return result;
 		}
 	}
@@ -333,15 +332,15 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-	unsigned takeExp = (0xff << 23)
+	unsigned takeExp = (0xff << 23);
 	unsigned Exp = takeExp & uf;
-	unsigned takeSign = (1 << 31)
+	unsigned takeSign = (1 << 31);
 	unsigned Sign = takeSign & uf;
 	unsigned takeF = ~(takeExp | takeSign);	
 	unsigned F = takeF & uf;
 	unsigned result;
 	unsigned NaN = 1 << 31;
-	int E;
+	unsigned E;
 	if(!(Exp ^ takeExp) && F)   //NaN
 		return NaN;
 	else if(!(Exp ^ takeExp))       //Inf
