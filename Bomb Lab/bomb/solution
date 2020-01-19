@@ -3,6 +3,7 @@ Compare the input with a string at 0x402400
 use (gdb) print (char*) x402400
 "Border relations with Canada have never been better."
 
+-------------------------------------------------------------
 phase_2:
 Read six numbers and compare them one by one.
 %rsp points to the first one
@@ -16,6 +17,7 @@ compare: 2 * a[i-1] and a[i]
   
 result:1 2 4 8 16 32
 
+-------------------------------------------------------------
 phase_3:
 (gdb) print (char*) 0x4025cf
 "%d %d"
@@ -35,5 +37,38 @@ a  jmpqDest    b      b(deci)
 6  0x400f9f   0x2aa     682
 7  0x400fa6   0x147     327 
 
+-------------------------------------------------------------
 phase_4:
+input 2 integars
+1.'a' <= 0xe
+2.'b' = 0
+3.func4 return eax=0
+
+func4:(initial edx = 0xe, esi = 0x0)
+ecx = ((edx-esi)>>31 + edi-esi) >> 1 + esi;
+(
+eax = edx - esi;
+ecx = eax >> 31;(logical)
+eax += ecx;
+eax >>= 1;(arith)
+ecx = eax + esi;
+//which means, ecx = (edi-esi)/2+esi
+)
+
+if (ecx <= edi('a'))
+	eax = 0;
+	if( ecx >= edi)
+		return eax;
+	else
+		esi = rcx + 1;
+		func4
+else
+	edx = rcx - 1;
+	func4
+	eax *= 2;
+//So when ecx = edi(a), print out eax = 0, that is, edi = 7
+
+--------------------------------------------------------
+phase_5:
+
 
