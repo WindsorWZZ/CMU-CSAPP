@@ -70,5 +70,12 @@ else
 
 --------------------------------------------------------
 phase_5:
+input 6 length string
+phase_5+52:from 0-5, use 'and' to take the last 4-digit of every char
+phase_5+55:use that 4-digit as the offset, take char from 0x4024b0:
+"maduiersnfotvbylSo you think you can stop the bomb with ctrl-c, do you?"
+phase_5+81~+91:compare the taken string with 0x40245e:
+"flyers"
 
+So we just need to input 6 chars which last 4-digit is equal to:9 f e 5 6 7
 
